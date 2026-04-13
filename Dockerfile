@@ -1,24 +1,18 @@
 # Stage 1: Build the application
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS builder
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /source
 
-# Copy the project file and restore dependencies
-COPY *.csproj .
-RUN dotnet restore
+# Copy csproj from the subfolder and restore
+COPY jubilant-broccoliii/*.csproj ./jubilant-broccoliii/
+RUN dotnet restore jubilant-broccoliii/jubilant-broccoliii.csproj
 
-# Copy the rest of the source code
+# Copy everything else
 COPY . .
-
-# Publish the application to a folder
+WORKDIR /source/jubilant-broccoliii
 RUN dotnet publish -c Release -o /app/publish
 
-# Stage 2: Create the final runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-COPY --from=builder /app/publish .
-
-# Expose the port your app listens on (Render uses PORT env variable)
-EXPOSE 8080
-
-# Set the entry point to run your application
-ENTRYPOINT ["dotnet", "myapp.dll"]
+COPY --from=build /app/publish .
+ENV ASPNETCORE_URLS=http://+:${PORT}
+ENTRYPOINT ["dotnet", "jubilant-broccoliii.dll"]
